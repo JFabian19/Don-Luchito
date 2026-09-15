@@ -1,203 +1,78 @@
 import { useMemo, useState } from 'react';
-import {
-  ChevronRight, Flame, ImageOff, Menu, MessageCircle, Minus, Phone,
-  Plus, ShoppingBag, Trash2, X,
-} from 'lucide-react';
+import { ChevronRight, Flame, ImageOff, LocateFixed, MapPin, Menu, MessageCircle, Minus, Phone, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { DEFAULT_MENU_DATA, type Dish } from './data/menuData';
 
-const RESTAURANTE_NAME = 'Don Luchito Chicken & Grill';
 const WHATSAPP_NUMBER = '51906959499';
 const PHONE_DISPLAY = '906 959 499';
+const CREAMS = ['Ketchup', 'Mayonesa', 'Mostaza', 'Ají'];
+const CONFIGURABLE_CATEGORIES = new Set(['menu-brasa', 'pollos-a-la-brasa', 'combos-personales', 'combos-familiares', 'chifa']);
 
-interface CartItem {
-  nombre: string;
-  precio: string;
-  cantidad: number;
-}
+interface CartItem { id: string; nombre: string; precio: string; cantidad: number; cremas: string[]; nota: string; }
+interface PendingDish { dish: Dish; categoryId: string; }
 
 export default function App() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [activeCategory, setActiveCategory] = useState(DEFAULT_MENU_DATA[0].id);
   const [showCart, setShowCart] = useState(false);
-  const [showDeliveryNotice, setShowDeliveryNotice] = useState(false);
+  const [showCheckout, setShowCheckout] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [pendingDish, setPendingDish] = useState<PendingDish | null>(null);
+  const [selectedCreams, setSelectedCreams] = useState<string[]>([]);
+  const [itemNote, setItemNote] = useState('');
+  const [fulfillment, setFulfillment] = useState<'delivery' | 'pickup'>('delivery');
+  const [customer, setCustomer] = useState({ name: '', address: '', phone: '', payment: 'Yape' });
+  const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
+  const [locationStatus, setLocationStatus] = useState('');
 
-  const cartCount = useMemo(() => cart.reduce((total, dish) => total + dish.cantidad, 0), [cart]);
-  const total = useMemo(
-    () => cart.reduce((sum, dish) => sum + Number.parseFloat(dish.precio.replace(/[^\d.]/g, '')) * dish.cantidad, 0),
-    [cart],
-  );
+  const cartCount = useMemo(() => cart.reduce((sum, item) => sum + item.cantidad, 0), [cart]);
+  const productsTotal = useMemo(() => cart.reduce((sum, item) => sum + Number.parseFloat(item.precio.replace(/[^\d.]/g, '')) * item.cantidad, 0), [cart]);
+  const packagingTotal = cartCount;
+  const total = productsTotal + packagingTotal;
 
-  const addToCart = (dish: Dish) => {
-    setCart((current) => {
-      const found = current.find((cartDish) => cartDish.nombre === dish.nombre && cartDish.precio === dish.precio);
-      return found
-        ? current.map((cartDish) => cartDish === found ? { ...cartDish, cantidad: cartDish.cantidad + 1 } : cartDish)
-        : [...current, { nombre: dish.nombre, precio: dish.precio, cantidad: 1 }];
+  const addToCart = (dish: Dish, cremas: string[] = [], nota = '') => {
+    const trimmedNote = nota.trim();
+    const id = `${dish.nombre}-${dish.precio}-${cremas.join(',')}-${trimmedNote}`;
+    setCart((items) => {
+      const existing = items.find((item) => item.id === id);
+      return existing ? items.map((item) => item.id === id ? { ...item, cantidad: item.cantidad + 1 } : item) : [...items, { id, nombre: dish.nombre, precio: dish.precio, cantidad: 1, cremas, nota: trimmedNote }];
     });
   };
-
-  const changeQuantity = (nombre: string, precio: string, amount: number) => {
-    setCart((current) => current
-      .map((dish) => dish.nombre === nombre && dish.precio === precio
-        ? { ...dish, cantidad: dish.cantidad + amount }
-        : dish)
-      .filter((dish) => dish.cantidad > 0));
+  const startAdd = (dish: Dish, categoryId: string) => {
+    if (!CONFIGURABLE_CATEGORIES.has(categoryId)) { addToCart(dish); return; }
+    setSelectedCreams([]); setItemNote(''); setPendingDish({ dish, categoryId });
   };
-
-  const selectCategory = (id: string) => {
-    setActiveCategory(id);
-    setShowMenu(false);
-    document.getElementById(`category-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  const changeQuantity = (id: string, amount: number) => setCart((items) => items.map((item) => item.id === id ? { ...item, cantidad: item.cantidad + amount } : item).filter((item) => item.cantidad > 0));
+  const selectCategory = (id: string) => { setActiveCategory(id); setShowMenu(false); document.getElementById(`category-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); };
+  const toggleCream = (cream: string) => setSelectedCreams((selected) => selected.includes(cream) ? selected.filter((item) => item !== cream) : [...selected, cream]);
+  const confirmConfiguredDish = () => { if (pendingDish) { addToCart(pendingDish.dish, selectedCreams, itemNote); setPendingDish(null); } };
+  const requestLocation = () => {
+    if (!navigator.geolocation) { setLocationStatus('Tu navegador no permite compartir ubicación.'); return; }
+    setLocationStatus('Solicitando permiso para tu ubicación…');
+    navigator.geolocation.getCurrentPosition(({ coords }) => { setLocation({ latitude: coords.latitude, longitude: coords.longitude }); setLocationStatus('Ubicación agregada a tu pedido.'); }, () => setLocationStatus('No se pudo obtener la ubicación. Revisa los permisos e inténtalo otra vez.'), { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
   };
-
   const sendToWhatsApp = () => {
-    const detail = cart.map((dish) => `• ${dish.cantidad} x ${dish.nombre} (${dish.precio})`).join('\n');
-    const message = `Resumen del pedido:\n${detail}\n\nTotal: S/ ${total.toFixed(2)}`;
+    const detail = cart.map((item) => {
+      const extras = [item.cremas.length ? `Cremas: ${item.cremas.join(', ')}` : '', item.nota ? `Nota: ${item.nota}` : ''].filter(Boolean).join(' · ');
+      return `• ${item.cantidad} x ${item.nombre} (${item.precio})${extras ? `\n  ${extras}` : ''}`;
+    }).join('\n');
+    const logistics = fulfillment === 'delivery' ? `Delivery\nNombre: ${customer.name}\nDirección: ${customer.address}${location ? `\nUbicación: https://www.google.com/maps?q=${location.latitude},${location.longitude}` : ''}` : `Recoger en tienda\nNombre: ${customer.name}\nTeléfono: ${customer.phone}`;
+    const message = `Resumen del pedido:\n${detail}\n\nProductos: S/ ${productsTotal.toFixed(2)}\nEnvases (S/ 1.00 x ${cartCount} plato${cartCount === 1 ? '' : 's'}): S/ ${packagingTotal.toFixed(2)}\nTotal estimado: S/ ${total.toFixed(2)}\n\n${logistics}\nPago: ${customer.payment}`;
     window.open(`https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`, '_blank', 'noopener,noreferrer');
   };
+  const checkoutReady = fulfillment === 'delivery' ? customer.name.trim().length > 0 && customer.address.trim().length > 0 : customer.name.trim().length > 0 && customer.phone.trim().length > 0;
 
-  return (
-    <div className="site-shell">
-      <div className="menu-page">
-        <header className="topbar">
-          <a href="#inicio" className="header-logo" aria-label="Inicio de Don Luchito">
-            <img src="/logo-don-luchito.png" alt="Don Luchito Chicken & Grill" />
-          </a>
-          <div className="header-actions">
-            <a href={`tel:${PHONE_DISPLAY.replace(/\s/g, '')}`} className="phone-action" aria-label={`Llamar al ${PHONE_DISPLAY}`}>
-              <Phone size={16} /> <span>{PHONE_DISPLAY}</span>
-            </a>
-            <button className="cart-icon" onClick={() => cartCount > 0 && setShowCart(true)} aria-label="Ver pedido">
-              <ShoppingBag size={21} />
-              {cartCount > 0 && <span>{cartCount}</span>}
-            </button>
-            <button className="mobile-menu" onClick={() => setShowMenu((visible) => !visible)} aria-label="Ver categorías">
-              {showMenu ? <X size={21} /> : <Menu size={21} />}
-            </button>
-          </div>
-        </header>
-
-        <div className="ember-strip" aria-hidden="true">
-          <span>POLLERÍA · CHIFA · RESTAURANT · PEDIDOS AL {PHONE_DISPLAY} · </span>
-          <span>POLLERÍA · CHIFA · RESTAURANT · PEDIDOS AL {PHONE_DISPLAY} · </span>
-        </div>
-
-        <section id="inicio" className="hero-section">
-          <img className="hero-image" src="/hero-don-luchito.png" alt="Pollo a la brasa Don Luchito sobre brasas" />
-          <div className="hero-shade" />
-          <div className="hero-content">
-            <div className="hero-kicker"><Flame size={16} fill="currentColor" /> Desde la brasa a tu mesa</div>
-            <h1>El sabor que<br /><em>enciende</em> el antojo.</h1>
-            <p>Pollo jugoso, piel crocante y el sabor inconfundible de Don Luchito.</p>
-            <button className="hero-cta" onClick={() => selectCategory('menu-brasa')}>
-              Ver promo Menú Brasa <ChevronRight size={18} />
-            </button>
-          </div>
-          <div className="hero-stamp"><span>HECHO</span><strong>AL FUEGO</strong><span>CON SABOR</span></div>
-        </section>
-
-        <nav className={`category-nav ${showMenu ? 'is-open' : ''}`} aria-label="Categorías de la carta">
-          <div className="category-nav-inner">
-            {DEFAULT_MENU_DATA.map((category) => (
-              <button key={category.id} onClick={() => selectCategory(category.id)} className={`${activeCategory === category.id ? 'active' : ''} ${category.destacada ? 'promotion-nav' : ''}`}>
-                {category.nombre}
-              </button>
-            ))}
-          </div>
-        </nav>
-
-        <main className="menu-content">
-          <div className="intro-line"><span>LA CARTA</span><i /><span>DON LUCHITO</span></div>
-          {DEFAULT_MENU_DATA.map((category, categoryIndex) => (
-            <section id={`category-${category.id}`} key={category.id} className={`category-section ${category.destacada ? 'promotion-section' : ''}`}>
-              <div className="category-heading">
-                <div className="heading-number">0{categoryIndex + 1}</div>
-                <div>
-                  <p>{category.destacada ? 'PROMOCIÓN ESPECIAL' : 'ESPECIALIDADES'}</p>
-                  <h2>{category.nombre}</h2>
-                  {category.horario && <span className="promotion-schedule">{category.horario}</span>}
-                </div>
-                <div className="heading-flame"><Flame size={30} fill="currentColor" /></div>
-              </div>
-              <div className="dish-grid">
-                {category.items.map((dish) => (
-                  <motion.article key={`${category.id}-${dish.nombre}`} whileHover={{ y: -4 }} transition={{ duration: 0.18 }} className={`dish-card ${category.destacada ? 'promotion-card' : ''}`}>
-                    {category.destacada ? (
-                      <div className="promotion-price-banner" aria-label="Promoción Menú Brasa a diez soles">
-                        <span>A SOLO</span><strong>S/ 10</strong><small>MENÚ BRASA</small>
-                      </div>
-                    ) : (
-                      <div className="dish-photo-placeholder" aria-label="Imagen del plato pendiente"><ImageOff size={21} /><span>IMAGEN<br />DEL PLATO</span></div>
-                    )}
-                    <div className="dish-copy">
-                      <h3>{dish.nombre}</h3>
-                      {dish.descripcion && <p>{dish.descripcion}</p>}
-                      <div className="dish-bottom"><strong>{dish.precio}</strong><button onClick={() => addToCart(dish)} aria-label={`Agregar ${dish.nombre} al pedido`}><Plus size={18} strokeWidth={3} /></button></div>
-                    </div>
-                  </motion.article>
-                ))}
-              </div>
-            </section>
-          ))}
-        </main>
-
-        <footer className="site-footer">
-          <img src="/logo-don-luchito.png" alt="Don Luchito Chicken & Grill" />
-          <p>Pollería · Chifa · Restaurant</p>
-          <a href={`tel:${PHONE_DISPLAY.replace(/\s/g, '')}`}><Phone size={16} /> Pedidos: {PHONE_DISPLAY}</a>
-          <span>© 2026 Don Luchito. Todos los derechos reservados.</span>
-        </footer>
-      </div>
-
-      <AnimatePresence>
-        {cartCount > 0 && !showCart && (
-          <motion.button initial={{ y: 90, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 90, opacity: 0 }} className="floating-cart" onClick={() => setShowCart(true)}>
-            <span className="floating-cart-icon"><ShoppingBag size={19} /></span>
-            <span><small>Tu pedido</small>{cartCount} {cartCount === 1 ? 'plato' : 'platos'}</span>
-            <b>S/ {total.toFixed(2)}</b><ChevronRight size={18} />
-          </motion.button>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showCart && (
-          <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="order-panel" initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}>
-              <button className="close-button" onClick={() => setShowCart(false)} aria-label="Cerrar pedido"><X size={20} /></button>
-              <div className="panel-title"><ShoppingBag size={23} /><div><span>ESTÁS PIDIENDO</span><h2>Tu pedido</h2></div></div>
-              <div className="order-list">
-                {cart.map((dish) => (
-                  <div className="order-row" key={`${dish.nombre}-${dish.precio}`}>
-                    <div><h3>{dish.nombre}</h3><p>{dish.precio}</p></div>
-                    <div className="quantity-controls"><button onClick={() => changeQuantity(dish.nombre, dish.precio, -1)}><Minus size={15} /></button><span>{dish.cantidad}</span><button onClick={() => changeQuantity(dish.nombre, dish.precio, 1)}><Plus size={15} /></button></div>
-                    <button className="remove-item" onClick={() => changeQuantity(dish.nombre, dish.precio, -dish.cantidad)} aria-label={`Eliminar ${dish.nombre}`}><Trash2 size={17} /></button>
-                  </div>
-                ))}
-              </div>
-              <div className="total-row"><span>Total estimado</span><strong>S/ {total.toFixed(2)}</strong></div>
-              <button className="place-order" onClick={() => setShowDeliveryNotice(true)}>Enviar pedido <ChevronRight size={20} /></button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <AnimatePresence>
-        {showDeliveryNotice && (
-          <motion.div className="modal-backdrop delivery-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-            <motion.div className="delivery-panel" initial={{ scale: 0.94, y: 18 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.94, y: 18 }}>
-              <button className="close-button" onClick={() => setShowDeliveryNotice(false)} aria-label="Cerrar"><X size={20} /></button>
-              <div className="delivery-icon"><Flame size={31} fill="currentColor" /></div>
-              <p className="panel-eyebrow">PRONTO DELIVERY</p>
-              <h2>Estamos preparando<br />algo buenazo.</h2>
-              <p>El formulario para delivery aún está en preparación. No te preocupes: puedes enviarnos el resumen de tu pedido por WhatsApp.</p>
-              <button className="whatsapp-button" onClick={sendToWhatsApp}><MessageCircle size={20} /> Enviar por WhatsApp</button>
-              <small>Solo se enviará el resumen de tu pedido.</small>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
+  return <div className="site-shell"><div className="menu-page">
+    <header className="topbar"><a href="#inicio" className="header-logo" aria-label="Inicio de Don Luchito"><img src="/logo-don-luchito.png" alt="Don Luchito Chicken & Grill" /></a><div className="header-actions"><a href={`tel:${PHONE_DISPLAY.replace(/\s/g, '')}`} className="phone-action" aria-label={`Llamar al ${PHONE_DISPLAY}`}><Phone size={16} /> <span>{PHONE_DISPLAY}</span></a><button className="cart-icon" onClick={() => cartCount > 0 && setShowCart(true)} aria-label="Ver pedido"><ShoppingBag size={21} />{cartCount > 0 && <span>{cartCount}</span>}</button><button className="mobile-menu" onClick={() => setShowMenu((visible) => !visible)} aria-label="Ver categorías">{showMenu ? <X size={21} /> : <Menu size={21} />}</button></div></header>
+    <div className="ember-strip" aria-hidden="true"><span>POLLERÍA · CHIFA · RESTAURANT · PEDIDOS AL {PHONE_DISPLAY} · </span><span>POLLERÍA · CHIFA · RESTAURANT · PEDIDOS AL {PHONE_DISPLAY} · </span></div>
+    <section id="inicio" className="hero-section"><img className="hero-image" src="/hero-don-luchito.png" alt="Pollo a la brasa Don Luchito sobre brasas" /><div className="hero-shade" /><div className="hero-content"><div className="hero-kicker"><Flame size={16} fill="currentColor" /> Desde la brasa a tu mesa</div><h1>El sabor que<br /><em>enciende</em> el antojo.</h1><p>Pollo jugoso, piel crocante y el sabor inconfundible de Don Luchito.</p><button className="hero-cta" onClick={() => selectCategory('menu-brasa')}>Ver promo Menú Brasa <ChevronRight size={18} /></button></div><div className="hero-stamp"><span>HECHO</span><strong>AL FUEGO</strong><span>CON SABOR</span></div></section>
+    <nav className={`category-nav ${showMenu ? 'is-open' : ''}`} aria-label="Categorías de la carta"><div className="category-nav-inner">{DEFAULT_MENU_DATA.map((category) => <button key={category.id} onClick={() => selectCategory(category.id)} className={`${activeCategory === category.id ? 'active' : ''} ${category.destacada ? 'promotion-nav' : ''}`}>{category.nombre}</button>)}</div></nav>
+    <main className="menu-content"><div className="intro-line"><span>LA CARTA</span><i /><span>DON LUCHITO</span></div>{DEFAULT_MENU_DATA.map((category, categoryIndex) => <section id={`category-${category.id}`} key={category.id} className={`category-section ${category.destacada ? 'promotion-section' : ''}`}><div className="category-heading"><div className="heading-number">0{categoryIndex + 1}</div><div><p>{category.destacada ? 'PROMOCIÓN ESPECIAL' : 'ESPECIALIDADES'}</p><h2>{category.nombre}</h2>{category.horario && <span className="promotion-schedule">{category.horario}</span>}</div><div className="heading-flame"><Flame size={30} fill="currentColor" /></div></div><div className="dish-grid">{category.items.map((dish) => <motion.article key={`${category.id}-${dish.nombre}`} whileHover={{ y: -4 }} transition={{ duration: 0.18 }} className={`dish-card ${category.destacada ? 'promotion-card' : ''}`}>{category.destacada ? <div className="promotion-price-banner" aria-label="Promoción Menú Brasa a diez soles"><span>A SOLO</span><strong>S/ 10</strong><small>MENÚ BRASA</small></div> : <div className="dish-photo-placeholder" aria-label="Imagen del plato pendiente"><ImageOff size={21} /><span>IMAGEN<br />DEL PLATO</span></div>}<div className="dish-copy"><h3>{dish.nombre}</h3>{dish.descripcion && <p>{dish.descripcion}</p>}<div className="dish-bottom"><strong>{dish.precio}</strong><button onClick={() => startAdd(dish, category.id)} aria-label={`Agregar ${dish.nombre} al pedido`}><Plus size={18} strokeWidth={3} /></button></div></div></motion.article>)}</div></section>)}</main>
+    <footer className="site-footer"><img src="/logo-don-luchito.png" alt="Don Luchito Chicken & Grill" /><p>Pollería · Chifa · Restaurant</p><a href={`tel:${PHONE_DISPLAY.replace(/\s/g, '')}`}><Phone size={16} /> Pedidos: {PHONE_DISPLAY}</a><span>© 2026 Don Luchito. Todos los derechos reservados.</span></footer>
+  </div>
+  <AnimatePresence>{cartCount > 0 && !showCart && !showCheckout && <motion.button initial={{ y: 90, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 90, opacity: 0 }} className="floating-cart" onClick={() => setShowCart(true)}><span className="floating-cart-icon"><ShoppingBag size={19} /></span><span><small>Tu pedido</small>{cartCount} {cartCount === 1 ? 'plato' : 'platos'}</span><b>S/ {total.toFixed(2)}</b><ChevronRight size={18} /></motion.button>}</AnimatePresence>
+  <AnimatePresence>{pendingDish && <motion.div className="modal-backdrop config-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><motion.section className="config-panel" initial={{ y: 35, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 35, opacity: 0 }} role="dialog" aria-modal="true" aria-labelledby="config-title"><button className="close-button" onClick={() => setPendingDish(null)} aria-label="Cerrar configuración"><X size={20} /></button><p className="panel-eyebrow">PERSONALIZA TU PEDIDO</p><h2 id="config-title">{pendingDish.dish.nombre}</h2><p className="config-intro">Elige las cremas que deseas y déjanos una nota si la necesitas.</p><div className="config-label-row"><label>Cremas</label><button className="select-all" onClick={() => setSelectedCreams(selectedCreams.length === CREAMS.length ? [] : CREAMS)}>{selectedCreams.length === CREAMS.length ? 'Quitar todas' : 'Seleccionar todas'}</button></div><div className="cream-options">{CREAMS.map((cream) => <label key={cream} className={`cream-option ${selectedCreams.includes(cream) ? 'selected' : ''}`}><input type="checkbox" checked={selectedCreams.includes(cream)} onChange={() => toggleCream(cream)} />{cream}</label>)}</div><label className="note-field"><span>Notas o referencias <small>Opcional</small></span><textarea value={itemNote} onChange={(event) => setItemNote(event.target.value)} placeholder="Ej.: sin cebolla, tocar el timbre, referencia…" maxLength={240} /></label><button className="place-order" onClick={confirmConfiguredDish}>Agregar al pedido <Plus size={19} /></button></motion.section></motion.div>}</AnimatePresence>
+  <AnimatePresence>{showCart && <motion.div className="modal-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><motion.div className="order-panel" initial={{ y: 60, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 60, opacity: 0 }}><button className="close-button" onClick={() => setShowCart(false)} aria-label="Cerrar pedido"><X size={20} /></button><div className="panel-title"><ShoppingBag size={23} /><div><span>ESTÁS PIDIENDO</span><h2>Tu pedido</h2></div></div><div className="order-list">{cart.map((item) => <div className="order-row" key={item.id}><div><h3>{item.nombre}</h3><p>{item.precio}</p>{item.cremas.length > 0 && <small>Cremas: {item.cremas.join(', ')}</small>}{item.nota && <small>Nota: {item.nota}</small>}</div><div className="quantity-controls"><button onClick={() => changeQuantity(item.id, -1)}><Minus size={15} /></button><span>{item.cantidad}</span><button onClick={() => changeQuantity(item.id, 1)}><Plus size={15} /></button></div><button className="remove-item" onClick={() => changeQuantity(item.id, -item.cantidad)} aria-label={`Eliminar ${item.nombre}`}><Trash2 size={17} /></button></div>)}</div><div className="totals-breakdown"><div><span>Productos</span><b>S/ {productsTotal.toFixed(2)}</b></div><div><span>Envases <small>S/ 1.00 × {cartCount} plato{cartCount === 1 ? '' : 's'}</small></span><b>S/ {packagingTotal.toFixed(2)}</b></div></div><div className="total-row"><span>Total estimado</span><strong>S/ {total.toFixed(2)}</strong></div><button className="place-order" onClick={() => { setShowCart(false); setShowCheckout(true); }}>Enviar pedido <ChevronRight size={20} /></button></motion.div></motion.div>}</AnimatePresence>
+  <AnimatePresence>{showCheckout && <motion.div className="modal-backdrop checkout-backdrop" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}><motion.section className="checkout-panel" initial={{ scale: 0.96, y: 18 }} animate={{ scale: 1, y: 0 }} exit={{ scale: 0.96, y: 18 }} role="dialog" aria-modal="true" aria-labelledby="checkout-title"><button className="close-button" onClick={() => setShowCheckout(false)} aria-label="Cerrar"><X size={20} /></button><div className="delivery-icon"><Flame size={31} fill="currentColor" /></div><p className="panel-eyebrow">CASI LISTO</p><h2 id="checkout-title">¿Cómo recibes tu pedido?</h2><div className="fulfillment-tabs"><button className={fulfillment === 'delivery' ? 'active' : ''} onClick={() => setFulfillment('delivery')}><MapPin size={17} /> Delivery</button><button className={fulfillment === 'pickup' ? 'active' : ''} onClick={() => setFulfillment('pickup')}><ShoppingBag size={17} /> Recoger en tienda</button></div><div className="checkout-fields"><label>Nombre<input value={customer.name} onChange={(event) => setCustomer({ ...customer, name: event.target.value })} placeholder="Tu nombre" autoComplete="name" /></label>{fulfillment === 'delivery' ? <><label>Dirección<input value={customer.address} onChange={(event) => setCustomer({ ...customer, address: event.target.value })} placeholder="Av., calle, número, distrito…" autoComplete="street-address" /></label><div className="location-card"><p><strong>Comparte tu ubicación en tiempo real</strong>Dale clic al botón y acepta los permisos para compartir tu ubicación con el restaurante.</p><button type="button" onClick={requestLocation}><LocateFixed size={17} /> {location ? 'Ubicación agregada' : 'Obtener ubicación en tiempo real'}</button>{locationStatus && <small>{locationStatus}</small>}</div></> : <label>Teléfono<input value={customer.phone} onChange={(event) => setCustomer({ ...customer, phone: event.target.value })} placeholder="Tu número de celular" inputMode="tel" autoComplete="tel" /></label>}</div><fieldset className="payment-methods"><legend>Método de pago</legend>{['Yape', 'Tarjeta', 'Efectivo'].map((method) => <label key={method}><input type="radio" name="payment" value={method} checked={customer.payment === method} onChange={() => setCustomer({ ...customer, payment: method })} />{method}</label>)}</fieldset><div className="checkout-total"><span>Total estimado <small>Incluye S/ {packagingTotal.toFixed(2)} de envases</small></span><strong>S/ {total.toFixed(2)}</strong></div><button className="whatsapp-button" disabled={!checkoutReady} onClick={sendToWhatsApp}><MessageCircle size={20} /> Enviar pedido por WhatsApp</button></motion.section></motion.div>}</AnimatePresence>
+  </div>;
 }
