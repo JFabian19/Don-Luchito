@@ -91,8 +91,8 @@ export default function App() {
             <div className="hero-kicker"><Flame size={16} fill="currentColor" /> Desde la brasa a tu mesa</div>
             <h1>El sabor que<br /><em>enciende</em> el antojo.</h1>
             <p>Pollo jugoso, piel crocante y el sabor inconfundible de Don Luchito.</p>
-            <button className="hero-cta" onClick={() => selectCategory('pollos-a-la-brasa')}>
-              Ver nuestra carta <ChevronRight size={18} />
+            <button className="hero-cta" onClick={() => selectCategory('menu-brasa')}>
+              Ver promo Menú Brasa <ChevronRight size={18} />
             </button>
           </div>
           <div className="hero-stamp"><span>HECHO</span><strong>AL FUEGO</strong><span>CON SABOR</span></div>
@@ -101,7 +101,7 @@ export default function App() {
         <nav className={`category-nav ${showMenu ? 'is-open' : ''}`} aria-label="Categorías de la carta">
           <div className="category-nav-inner">
             {DEFAULT_MENU_DATA.map((category) => (
-              <button key={category.id} onClick={() => selectCategory(category.id)} className={activeCategory === category.id ? 'active' : ''}>
+              <button key={category.id} onClick={() => selectCategory(category.id)} className={`${activeCategory === category.id ? 'active' : ''} ${category.destacada ? 'promotion-nav' : ''}`}>
                 {category.nombre}
               </button>
             ))}
@@ -111,16 +111,26 @@ export default function App() {
         <main className="menu-content">
           <div className="intro-line"><span>LA CARTA</span><i /><span>DON LUCHITO</span></div>
           {DEFAULT_MENU_DATA.map((category, categoryIndex) => (
-            <section id={`category-${category.id}`} key={category.id} className="category-section">
+            <section id={`category-${category.id}`} key={category.id} className={`category-section ${category.destacada ? 'promotion-section' : ''}`}>
               <div className="category-heading">
                 <div className="heading-number">0{categoryIndex + 1}</div>
-                <div><p>ESPECIALIDADES</p><h2>{category.nombre}</h2></div>
+                <div>
+                  <p>{category.destacada ? 'PROMOCIÓN ESPECIAL' : 'ESPECIALIDADES'}</p>
+                  <h2>{category.nombre}</h2>
+                  {category.horario && <span className="promotion-schedule">{category.horario}</span>}
+                </div>
                 <div className="heading-flame"><Flame size={30} fill="currentColor" /></div>
               </div>
               <div className="dish-grid">
                 {category.items.map((dish) => (
-                  <motion.article key={`${category.id}-${dish.nombre}`} whileHover={{ y: -4 }} transition={{ duration: 0.18 }} className="dish-card">
-                    <div className="dish-photo-placeholder" aria-label="Imagen del plato pendiente"><ImageOff size={21} /><span>IMAGEN<br />DEL PLATO</span></div>
+                  <motion.article key={`${category.id}-${dish.nombre}`} whileHover={{ y: -4 }} transition={{ duration: 0.18 }} className={`dish-card ${category.destacada ? 'promotion-card' : ''}`}>
+                    {category.destacada ? (
+                      <div className="promotion-price-banner" aria-label="Promoción Menú Brasa a diez soles">
+                        <span>A SOLO</span><strong>S/ 10</strong><small>MENÚ BRASA</small>
+                      </div>
+                    ) : (
+                      <div className="dish-photo-placeholder" aria-label="Imagen del plato pendiente"><ImageOff size={21} /><span>IMAGEN<br />DEL PLATO</span></div>
+                    )}
                     <div className="dish-copy">
                       <h3>{dish.nombre}</h3>
                       {dish.descripcion && <p>{dish.descripcion}</p>}

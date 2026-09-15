@@ -8,6 +8,8 @@ export interface Dish {
 export interface Category {
   id: string;
   nombre: string;
+  destacada?: boolean;
+  horario?: string;
   items: Dish[];
 }
 
@@ -15,6 +17,9 @@ const item = (nombre: string, precio: string, descripcion?: string): Dish => ({ 
 
 // Carta transcrita de las piezas gráficas proporcionadas por Don Luchito.
 export const DEFAULT_MENU_DATA: Category[] = [
+  { id: 'menu-brasa', nombre: 'Menú brasa', destacada: true, horario: 'Disponible de 12:00 p. m. a 5:00 p. m.', items: [
+    item('1/8 pollo a la brasa', 'S/ 10.00', 'Papas + chaufa + refresco + aguadito'),
+  ] },
   { id: 'pollos-a-la-brasa', nombre: 'Pollos a la brasa', items: [
     item('Octavo p/brasa', 'S/ 8.50', '1/8 pollo + papas + ensalada + cremas'),
     item('Cuarto p/brasa', 'S/ 10.00', '1/4 pollo + papas + ensalada + cremas'),
