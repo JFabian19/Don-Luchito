@@ -88,13 +88,15 @@ button { font: inherit; cursor: pointer; }
 .hero-content p { margin: 0; max-width: 230px; color: #fce9c5; font-size: 12px; line-height: 1.45; font-weight: 500; }
 .hero-cta { margin-top: 19px; padding: 11px 14px 11px 17px; border: 0; border-radius: 4px; display: inline-flex; align-items: center; gap: 7px; color: #251008; background: var(--gold); font: 800 13px/1 'Barlow Condensed', sans-serif; text-transform: uppercase; letter-spacing: .05em; box-shadow: 0 5px 0 #b35d1b; transition: transform .2s, box-shadow .2s; }
 .hero-cta:hover { transform: translateY(-2px); box-shadow: 0 7px 0 #b35d1b; }
-.hero-social-links { max-width: 218px; display: flex; flex-wrap: wrap; gap: 6px; margin-top: 15px; }
-.hero-social { min-height: 28px; display: inline-flex; align-items: center; justify-content: center; gap: 5px; padding: 6px 9px; border-radius: 999px; color: white; text-decoration: none; box-shadow: 0 2px 0 rgba(0,0,0,.28); font: 800 11px/1 'DM Sans', sans-serif; transition: transform .18s, filter .18s; }
-.hero-social:hover { transform: translateY(-2px); filter: brightness(1.08); }
-.hero-social span { width: 13px; text-align: center; font: 800 17px/.8 Arial, sans-serif; }
+.hero-social-links { display: flex; align-items: center; gap: 10px; margin-top: 15px; }
+.hero-social-links > span { color: #ffe0a2; font: 800 10px/1 'Barlow Condensed', sans-serif; letter-spacing: .12em; text-transform: uppercase; }
+.hero-social-links > div { display: flex; align-items: center; gap: 8px; }
+.hero-social { width: 34px; height: 34px; display: grid; place-items: center; overflow: hidden; border: 1px solid rgba(255,255,255,.45); border-radius: 50%; background: rgba(20, 11, 8, .78); box-shadow: 0 3px 8px rgba(0,0,0,.3); transition: transform .18s, box-shadow .18s; }
+.hero-social:hover { transform: translateY(-2px) scale(1.06); box-shadow: 0 5px 11px rgba(0,0,0,.42); }
+.hero-social img { width: 100%; height: 100%; object-fit: cover; }
 .facebook-link { background: #1877f2; }
-.tiktok-link { background: #202b3c; }
-.maps-link { background: #16864b; }
+.tiktok-link { background: #050505; }
+.maps-link { background: white; }
 .hero-stamp { width: 77px; height: 77px; position: absolute; bottom: 23px; right: 19px; border: 2px solid #ffd36a; color: #ffe1a1; border-radius: 50%; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: rotate(-9deg); background: rgba(29, 10, 3, .45); box-shadow: inset 0 0 0 3px rgba(255, 211, 106, .2); font: 800 9px/1.1 'Barlow Condensed', sans-serif; letter-spacing: .07em; }
 .hero-stamp strong { color: var(--gold); font: 400 15px/1.1 'Anton', sans-serif; }
 
@@ -213,12 +215,15 @@ button { font: inherit; cursor: pointer; }
 .fulfillment-tabs button.active { color: white; background: var(--ember); box-shadow: 0 2px 0 var(--ember-dark); }
 .checkout-fields { display: grid; gap: 13px; }
 .checkout-fields > label { display: grid; gap: 7px; color: var(--ink); font: 800 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; }
+.checkout-fields > label small { color: #9a7b66; font: 500 11px/1 'DM Sans', sans-serif; letter-spacing: 0; text-transform: none; }
 .checkout-fields input { height: 43px; padding: 0 11px; }
 .location-card { padding: 12px; border: 1px solid #efd5ab; border-radius: 6px; background: #fff3df; }
 .location-card p { margin: 0 0 10px; color: #715b4c; font-size: 12px; line-height: 1.35; }
 .location-card strong { display: block; margin-bottom: 3px; color: var(--ink); font-size: 13px; }
 .location-card button { display: inline-flex; align-items: center; gap: 6px; border: 0; padding: 8px 10px; border-radius: 4px; color: white; background: #482113; font: 800 12px/1 'Barlow Condensed', sans-serif; text-transform: uppercase; }
 .location-card small { display: block; margin-top: 8px; color: #9a6540; font-size: 10px; line-height: 1.25; }
+.location-card.has-error { border-color: #df8d76; background: #fff0e8; }
+.location-card.has-error small { color: #b44c37; }
 .payment-methods { display: flex; flex-wrap: wrap; gap: 8px; margin: 19px 0 17px; padding: 0; border: 0; }
 .payment-methods legend { width: 100%; margin-bottom: 9px; color: var(--ink); font: 800 14px/1 'Barlow Condensed', sans-serif; letter-spacing: .04em; text-transform: uppercase; }
 .payment-methods label { display: inline-flex; align-items: center; gap: 6px; padding: 9px 11px; border: 1px solid #dfc9aa; border-radius: 5px; background: white; color: #60483a; font-size: 13px; font-weight: 700; }
@@ -243,8 +248,9 @@ button { font: inherit; cursor: pointer; }
   .category-nav.is-open button { flex: 1 0 auto; }
   .hero-section { height: 361px; }
   .hero-content { padding-left: 21px; }
-  .hero-social-links { max-width: 205px; margin-top: 12px; gap: 5px; }
-  .hero-social { min-height: 26px; padding: 5px 8px; font-size: 10px; }
+  .hero-social-links { margin-top: 12px; gap: 8px; }
+  .hero-social-links > div { gap: 6px; }
+  .hero-social { width: 30px; height: 30px; }
   .hero-stamp { right: 13px; }
   .menu-content { padding-left: 12px; padding-right: 12px; }
   .category-heading h2 { font-size: 26px; }
