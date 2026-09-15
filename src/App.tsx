@@ -6,9 +6,9 @@ import {
 import { AnimatePresence, motion } from 'motion/react';
 import { DEFAULT_MENU_DATA, type Dish } from './data/menuData';
 
-const RESTAURANTE_NAME = "Pollos a la Brasa Leonardo's";
-const WHATSAPP_NUMBER = '51907484644';
-const PHONE_DISPLAY = '907 484 644';
+const RESTAURANTE_NAME = 'Don Luchito Chicken & Grill';
+const WHATSAPP_NUMBER = '51906959499';
+const PHONE_DISPLAY = '906 959 499';
 
 interface CartItem {
   nombre: string;
@@ -62,8 +62,8 @@ export default function App() {
     <div className="site-shell">
       <div className="menu-page">
         <header className="topbar">
-          <a href="#inicio" className="header-logo" aria-label="Inicio de Leonardo's">
-            <img src="/logo-leonardos.png" alt="Pollos a la Brasa Leonardo's & Chifa" />
+          <a href="#inicio" className="header-logo" aria-label="Inicio de Don Luchito">
+            <img src="/logo-don-luchito.png" alt="Don Luchito Chicken & Grill" />
           </a>
           <div className="header-actions">
             <a href={`tel:${PHONE_DISPLAY.replace(/\s/g, '')}`} className="phone-action" aria-label={`Llamar al ${PHONE_DISPLAY}`}>
@@ -80,17 +80,17 @@ export default function App() {
         </header>
 
         <div className="ember-strip" aria-hidden="true">
-          <span>POLLOS A LA BRASA · CHIFA · PARRILLAS · PEDIDOS AL {PHONE_DISPLAY} · </span>
-          <span>POLLOS A LA BRASA · CHIFA · PARRILLAS · PEDIDOS AL {PHONE_DISPLAY} · </span>
+          <span>POLLERÍA · CHIFA · RESTAURANT · PEDIDOS AL {PHONE_DISPLAY} · </span>
+          <span>POLLERÍA · CHIFA · RESTAURANT · PEDIDOS AL {PHONE_DISPLAY} · </span>
         </div>
 
         <section id="inicio" className="hero-section">
-          <img className="hero-image" src="/hero-parrilla.png" alt="Pollo dorado a la parrilla sobre brasas" />
+          <img className="hero-image" src="/hero-don-luchito.png" alt="Pollo a la brasa Don Luchito sobre brasas" />
           <div className="hero-shade" />
           <div className="hero-content">
             <div className="hero-kicker"><Flame size={16} fill="currentColor" /> Desde la brasa a tu mesa</div>
             <h1>El sabor que<br /><em>enciende</em> el antojo.</h1>
-            <p>Pollo jugoso, piel crocante y el aroma inconfundible de nuestras brasas.</p>
+            <p>Pollo jugoso, piel crocante y el sabor inconfundible de Don Luchito.</p>
             <button className="hero-cta" onClick={() => selectCategory('pollos-a-la-brasa')}>
               Ver nuestra carta <ChevronRight size={18} />
             </button>
@@ -109,7 +109,7 @@ export default function App() {
         </nav>
 
         <main className="menu-content">
-          <div className="intro-line"><span>LA CARTA</span><i /><span>LEONARDO'S</span></div>
+          <div className="intro-line"><span>LA CARTA</span><i /><span>DON LUCHITO</span></div>
           {DEFAULT_MENU_DATA.map((category, categoryIndex) => (
             <section id={`category-${category.id}`} key={category.id} className="category-section">
               <div className="category-heading">
@@ -134,10 +134,10 @@ export default function App() {
         </main>
 
         <footer className="site-footer">
-          <img src="/logo-leonardos.png" alt="Leonardo's" />
-          <p>Pollo a la brasa · Chifa · Parrillas</p>
+          <img src="/logo-don-luchito.png" alt="Don Luchito Chicken & Grill" />
+          <p>Pollería · Chifa · Restaurant</p>
           <a href={`tel:${PHONE_DISPLAY.replace(/\s/g, '')}`}><Phone size={16} /> Pedidos: {PHONE_DISPLAY}</a>
-          <span>© 2026 Leonardo's. Todos los derechos reservados.</span>
+          <span>© 2026 Don Luchito. Todos los derechos reservados.</span>
         </footer>
       </div>
 
