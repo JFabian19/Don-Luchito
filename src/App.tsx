@@ -1,7 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ChevronRight, Flame, ImageOff, LocateFixed, MapPin, Menu, MessageCircle, Minus, Phone, Plus, ShoppingBag, Trash2, X } from 'lucide-react';
 import { AnimatePresence, motion } from 'motion/react';
 import { DEFAULT_MENU_DATA, type Dish } from './data/menuData';
+import { fetchMenuData } from './services/googleSheets';
 
 const WHATSAPP_NUMBER = '51906959499';
 const PHONE_DISPLAY = '906 959 499';
@@ -13,6 +14,7 @@ interface CartItem { id: string; nombre: string; precio: string; cantidad: numbe
 interface PendingDish { dish: Dish; categoryId: string; }
 
 export default function App() {
+  const [menuData, setMenuData] = useState(DEFAULT_MENU_DATA);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [activeCategory, setActiveCategory] = useState(DEFAULT_MENU_DATA[0].id);
   const [showCart, setShowCart] = useState(false);
@@ -26,6 +28,21 @@ export default function App() {
   const [location, setLocation] = useState<{ latitude: number; longitude: number } | null>(null);
   const [locationStatus, setLocationStatus] = useState('');
   const [locationError, setLocationError] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    const updateMenu = async () => {
+      const remoteMenu = await fetchMenuData();
+      if (active && remoteMenu) {
+        setMenuData(remoteMenu);
+        setActiveCategory((current) => remoteMenu.some((category) => category.id === current) ? current : remoteMenu[0].id);
+      }
+    };
+
+    void updateMenu();
+    const refresh = window.setInterval(() => void updateMenu(), 60_000);
+    return () => { active = false; window.clearInterval(refresh); };
+  }, []);
 
   const cartCount = useMemo(() => cart.reduce((sum, item) => sum + item.cantidad, 0), [cart]);
   const productsTotal = useMemo(() => cart.reduce((sum, item) => sum + Number.parseFloat(item.precio.replace(/[^\d.]/g, '')) * item.cantidad, 0), [cart]);
@@ -69,8 +86,8 @@ export default function App() {
     <header className="topbar"><a href="#inicio" className="header-logo" aria-label="Inicio de Don Luchito"><img src="/logo-don-luchito.webp" alt="Don Luchito Chicken & Grill" /></a><div className="header-actions"><a href={`tel:${PHONE_DISPLAY.replace(/\s/g, '')}`} className="phone-action" aria-label={`Llamar al ${PHONE_DISPLAY}`}><Phone size={16} /> <span>{PHONE_DISPLAY}</span></a><button className="cart-icon" onClick={() => cartCount > 0 && setShowCart(true)} aria-label="Ver pedido"><ShoppingBag size={21} />{cartCount > 0 && <span>{cartCount}</span>}</button><button className="mobile-menu" onClick={() => setShowMenu((visible) => !visible)} aria-label="Ver categorías">{showMenu ? <X size={21} /> : <Menu size={21} />}</button></div></header>
     <div className="ember-strip" aria-hidden="true"><span>POLLERÍA · CHIFA · RESTAURANT · PEDIDOS AL {PHONE_DISPLAY} · </span><span>POLLERÍA · CHIFA · RESTAURANT · PEDIDOS AL {PHONE_DISPLAY} · </span></div>
     <section id="inicio" className="hero-section"><img className="hero-image" src="/hero-don-luchito.webp" alt="Pollo a la brasa Don Luchito sobre brasas" /><div className="hero-shade" /><div className="hero-content"><div className="hero-kicker"><Flame size={16} fill="currentColor" /> Desde la brasa a tu mesa</div><h1>El sabor que<br /><em>enciende</em> el antojo.</h1><p>Pollo jugoso, piel crocante y el sabor inconfundible de Don Luchito.</p><button className="hero-cta" onClick={() => selectCategory('menu-brasa')}>Ver promo Menú Brasa <ChevronRight size={18} /></button><div className="hero-social-links" aria-label="Encuéntranos en redes y ubicación"><span>Síguenos</span><div><a className="hero-social facebook-link" href="https://www.facebook.com/profile.php?id=61558473950922" target="_blank" rel="noreferrer" aria-label="Visitar Facebook de Don Luchito"><img src="/facebook-logo.webp" alt="" /></a><a className="hero-social tiktok-link" href="https://www.tiktok.com/@polleriadonluchito" target="_blank" rel="noreferrer" aria-label="Visitar TikTok de Don Luchito"><img src="/tiktok-logo.webp" alt="" /></a><a className="hero-social maps-link" href="https://www.google.com/maps/place/Jir%C3%B3n+Jos%C3%A9+G%C3%A1lvez+122,+Barranca+15169/@-10.7514336,-77.7607668,18z" target="_blank" rel="noreferrer" aria-label="Ver ubicación de Don Luchito en Google Maps"><img src="/maps-logo.webp" alt="" /></a></div></div></div><div className="hero-stamp"><span>HECHO</span><strong>AL FUEGO</strong><span>CON SABOR</span></div></section>
-    <nav className={`category-nav ${showMenu ? 'is-open' : ''}`} aria-label="Categorías de la carta"><div className="category-nav-inner">{DEFAULT_MENU_DATA.map((category) => <button key={category.id} onClick={() => selectCategory(category.id)} className={`${activeCategory === category.id ? 'active' : ''} ${category.destacada ? 'promotion-nav' : ''}`}>{category.nombre}</button>)}</div></nav>
-    <main className="menu-content"><div className="intro-line"><span>LA CARTA</span><i /><span>DON LUCHITO</span></div>{DEFAULT_MENU_DATA.map((category, categoryIndex) => <section id={`category-${category.id}`} key={category.id} className={`category-section ${category.destacada ? 'promotion-section' : ''}`}><div className="category-heading"><div className="heading-number">0{categoryIndex + 1}</div><div><p>{category.destacada ? 'PROMOCIÓN ESPECIAL' : 'ESPECIALIDADES'}</p><h2>{category.nombre}</h2>{category.horario && <span className="promotion-schedule">{category.horario}</span>}</div><div className="heading-flame"><Flame size={30} fill="currentColor" /></div></div><div className="dish-grid">{category.items.map((dish) => <motion.article key={`${category.id}-${dish.nombre}`} whileHover={{ y: -4 }} transition={{ duration: 0.18 }} className={`dish-card ${category.destacada ? 'promotion-card' : ''}`}>{dish.imagen ? <img className={category.destacada ? 'promotion-dish-image' : 'dish-image'} src={dish.imagen} alt={dish.nombre} /> : <div className="dish-photo-placeholder" aria-label="Imagen del plato pendiente"><ImageOff size={21} /><span>IMAGEN<br />DEL PLATO</span></div>}<div className="dish-copy"><h3>{dish.nombre}</h3>{dish.descripcion && <p>{dish.descripcion}</p>}<div className="dish-bottom"><strong>{dish.precio}</strong><button onClick={() => startAdd(dish, category.id)} aria-label={`Agregar ${dish.nombre} al pedido`}><Plus size={18} strokeWidth={3} /></button></div></div></motion.article>)}</div></section>)}</main>
+    <nav className={`category-nav ${showMenu ? 'is-open' : ''}`} aria-label="Categorías de la carta"><div className="category-nav-inner">{menuData.map((category) => <button key={category.id} onClick={() => selectCategory(category.id)} className={`${activeCategory === category.id ? 'active' : ''} ${category.destacada ? 'promotion-nav' : ''}`}>{category.nombre}</button>)}</div></nav>
+    <main className="menu-content"><div className="intro-line"><span>LA CARTA</span><i /><span>DON LUCHITO</span></div>{menuData.map((category, categoryIndex) => <section id={`category-${category.id}`} key={category.id} className={`category-section ${category.destacada ? 'promotion-section' : ''}`}><div className="category-heading"><div className="heading-number">0{categoryIndex + 1}</div><div><p>{category.destacada ? 'PROMOCIÓN ESPECIAL' : 'ESPECIALIDADES'}</p><h2>{category.nombre}</h2>{category.horario && <span className="promotion-schedule">{category.horario}</span>}</div><div className="heading-flame"><Flame size={30} fill="currentColor" /></div></div><div className="dish-grid">{category.items.map((dish) => <motion.article key={`${category.id}-${dish.nombre}`} whileHover={{ y: -4 }} transition={{ duration: 0.18 }} className={`dish-card ${category.destacada ? 'promotion-card' : ''}`}>{dish.imagen ? <img className={category.destacada ? 'promotion-dish-image' : 'dish-image'} src={dish.imagen} alt={dish.nombre} /> : <div className="dish-photo-placeholder" aria-label="Imagen del plato pendiente"><ImageOff size={21} /><span>IMAGEN<br />DEL PLATO</span></div>}<div className="dish-copy"><h3>{dish.nombre}</h3>{dish.descripcion && <p>{dish.descripcion}</p>}<div className="dish-bottom"><strong>{dish.precio}</strong><button onClick={() => startAdd(dish, category.id)} aria-label={`Agregar ${dish.nombre} al pedido`}><Plus size={18} strokeWidth={3} /></button></div></div></motion.article>)}</div></section>)}</main>
     <footer className="site-footer"><img src="/logo-don-luchito.webp" alt="Don Luchito Chicken & Grill" /><p>Pollería · Chifa · Restaurant</p><a href={`tel:${PHONE_DISPLAY.replace(/\s/g, '')}`}><Phone size={16} /> Pedidos: {PHONE_DISPLAY}</a><span>© 2026 Don Luchito. Todos los derechos reservados.</span></footer>
   </div>
   <AnimatePresence>{cartCount > 0 && !showCart && !showCheckout && <motion.button initial={{ y: 90, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 90, opacity: 0 }} className="floating-cart" onClick={() => setShowCart(true)}><span className="floating-cart-icon"><ShoppingBag size={19} /></span><span><small>Tu pedido</small>{cartCount} {cartCount === 1 ? 'plato' : 'platos'}</span><b>S/ {total.toFixed(2)}</b><ChevronRight size={18} /></motion.button>}</AnimatePresence>

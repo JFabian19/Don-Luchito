@@ -38,15 +38,15 @@ export const DEFAULT_MENU_DATA: Category[] = [
   ] },
   { id: 'combos-familiares', nombre: 'Combos familiares', items: [
     item('Combo para dos', 'S/ 24.50', '1/2 pollo a la brasa + papas + Pepsi 1.5 L + ensalada + cremas', '/combo-para-dos.webp'),
-    item('Combo Pepsi', 'S/ 26.50', '1/2 pollo a la brasa + papas + Pepsi 1.5 L + ensalada + cremas', '/combo-pepsi-familiar.webp'),
+    item('Combo Pepsi', 'S/ 25.50', '1/2 pollo a la brasa + papas + Pepsi 1.5 L + ensalada + cremas', '/combo-pepsi-familiar.webp'),
     item('Dúo chaufereo', 'S/ 30.00', '1/2 pollo a la brasa + papas + chaufa + ensalada + cremas', '/duo-chaufereo.webp'),
     item('Dúo tradicional', 'S/ 28.00', '1/2 pollo a la brasa + papas + chicha morada 1 L + ensalada + cremas', '/duo-tradicional.webp'),
     item('Combo clásico', 'S/ 46.00', '1 pollo a la brasa + papas + Inca o Coca Cola 1.5 L + ensalada + cremas', '/combo-clasico.webp'),
     item('Combo chaufereo', 'S/ 50.00', '1 pollo a la brasa + papas + chaufa + ensalada + cremas', '/combo-chaufereo.webp'),
     item('Combo tradicional', 'S/ 47.00', '1 pollo a la brasa + chicha morada 1 L + papas + ensalada + cremas', '/combo-tradicional.webp'),
-    item('A la brasa con yapa', 'S/ 47.00', '1 pollo a la brasa + 1/2 pollo + papas + ensalada + cremas', '/brasa-con-yapa.webp'),
+    item('A la brasa con yapa', 'S/ 47.00', '1 pollo a la brasa + 1/4 de pollo + papas + ensalada + cremas', '/brasa-con-yapa.webp'),
     item('Familiar peruano', 'S/ 50.00', '1 pollo a la brasa + Inca o Coca Cola 3 L + papas + ensalada + cremas', '/familiar-peruano.webp'),
-    item('Familiar Pepsi', 'S/ 53.00', '1 pollo a la brasa + Pepsi 2.5 L + papas + ensalada + cremas', '/familiar-pepsi.webp'),
+    item('Familiar Pepsi', 'S/ 53.00', '1 pollo a la brasa + Pepsi 1.5 L + papas + ensalada + cremas', '/familiar-pepsi.webp'),
     item('Mega familiar', 'S/ 56.00', '1 pollo a la brasa + Inca o Coca Cola 1.5 L + 1/4 de pollo + papas + ensalada + cremas', '/mega-familiar.webp'),
   ] },
   { id: 'chifa', nombre: 'Chifa', items: [
@@ -57,7 +57,7 @@ export const DEFAULT_MENU_DATA: Category[] = [
   ] },
   { id: 'bebidas', nombre: 'Bebidas', items: [
     item('Inca o Coca Cola personal', 'S/ 2.50', undefined, '/bebida-personal.webp'), item('Inca o Coca Cola 600 ml', 'S/ 4.00', undefined, '/bebida-inca-600.webp'), item('Inca o Coca Cola 1 L', 'S/ 7.00', undefined, '/bebida-inca-1l.webp'), item('Inca o Coca Cola 1.5 L', 'S/ 9.00', undefined, '/bebida-inca-1-5l.webp'), item('Inca o Coca Cola 2.25 L', 'S/ 11.00', undefined, '/bebida-inca-2-25l.webp'), item('Inca o Coca Cola 3 L', 'S/ 14.00', undefined, '/bebida-inca-3l.webp'), item('Gordita', 'S/ 5.00', undefined, '/bebida-gordita.webp'),
-    item('Pepsi 750 ml', 'S/ 4.00', undefined, '/bebida-pepsi-750.webp'), item('Pepsi 1 L', 'S/ 5.50', undefined, '/bebida-pepsi-1l.webp'), item('Pepsi 1.5 L', 'S/ 6.50', undefined, '/bebida-pepsi-1-5l.webp'), item('Pepsi 2 L', 'S/ 7.00', undefined, '/bebida-pepsi-2l.webp'), item('Pepsi 3 L', 'S/ 11.00', undefined, '/bebida-pepsi-3l.webp'), item('Agua Cielo o San Luis', 'S/ 2.00', undefined, '/bebida-agua.webp'), item('Cerveza Pilsen', 'S/ 8.00', undefined, '/bebida-pilsen.webp'), item('Cusqueña trigo o negra', 'S/ 10.00', undefined, '/bebida-cusquena.webp'), item('Concordia 1.5 L', 'S/ 6.50', undefined, '/bebida-concordia.webp'), item('Pepsi, Concordia o 7up 355 ml', 'S/ 1.50', undefined, '/bebida-mix-355.webp'), item('Gatorade', 'S/ 3.00', undefined, '/bebida-gatorade.webp'),
+    item('Pepsi 750 ml', 'S/ 4.00', undefined, '/bebida-pepsi-750.webp'), item('Pepsi 1 L', 'S/ 5.50', undefined, '/bebida-pepsi-1l.webp'), item('Pepsi 1.5 L', 'S/ 6.50', undefined, '/bebida-pepsi-1-5l.webp'), item('Pepsi 2 L', 'S/ 7.50', undefined, '/bebida-pepsi-2l.webp'), item('Pepsi 3 L', 'S/ 11.00', undefined, '/bebida-pepsi-3l.webp'), item('Agua Cielo o San Luis', 'S/ 2.00', undefined, '/bebida-agua.webp'), item('Cerveza Pilsen', 'S/ 8.00', undefined, '/bebida-pilsen.webp'), item('Cusqueña trigo o negra', 'S/ 10.00', undefined, '/bebida-cusquena.webp'), item('Concordia 1.5 L', 'S/ 5.50', undefined, '/bebida-concordia.webp'), item('Pepsi, Concordia o 7up 355 ml', 'S/ 1.50', undefined, '/bebida-mix-355.webp'), item('Gatorade', 'S/ 3.00', undefined, '/bebida-gatorade.webp'),
     item('Chicha o maracuyá 1 L', 'S/ 10.00', undefined, '/bebida-chicha-maracuya-1l.webp'), item('Chicha o maracuyá 500 ml', 'S/ 6.00', undefined, '/bebida-chicha-maracuya-500.webp'), item('Infusiones (té, anís y manzanilla)', 'S/ 2.50', undefined, '/bebida-infusiones.webp'),
   ] },
 ];

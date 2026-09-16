@@ -1,25 +1,33 @@
 import Papa from 'papaparse';
+import type { Category, Dish } from '../data/menuData';
 
 // Coloca aquí tu ID de Google Sheets (lo encuentras en la URL de tu hoja de cálculo)
-export const SHEET_ID = '';
+export const SHEET_ID = '1QEC28ClYzYxXjuFoRlrCYZWkRbn1ZZK0QlEzTp4CtHg';
 
 export interface SheetDish {
-  categoría: string;
-  'nombre del plato': string;
-  descripción: string;
+  categoria_id: string;
+  nombre: string;
+  descripcion: string;
   precio: string;
-  'URL de imagen': string;
+  url_imagen: string;
+  orden?: string;
 }
 
 export interface SheetCategory {
+  id: string;
   nombre: string;
+  destacada?: string;
+  horario?: string;
+  orden?: string;
 }
 
 export const fetchSheetData = async <T>(sheetName: string): Promise<T[]> => {
+  if (!SHEET_ID) return [];
   const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(sheetName)}`;
   
   try {
     const response = await fetch(url);
+    if (!response.ok) throw new Error(`No se pudo leer la hoja ${sheetName}.`);
     const csvText = await response.text();
     
     return new Promise((resolve, reject) => {
@@ -36,9 +44,71 @@ export const fetchSheetData = async <T>(sheetName: string): Promise<T[]> => {
   }
 };
 
+const isFeatured = (value?: string) => value?.trim().toUpperCase() === 'SI';
+const sortByOrder = <T extends { orden?: string }>(items: T[]) => [...items].sort((a, b) => Number(a.orden || 0) - Number(b.orden || 0));
+
+interface MenuPayload {
+  categorias: SheetCategory[];
+  platos: SheetDish[];
+}
+
+const fetchMenuFromWebApp = (): Promise<MenuPayload | null> => new Promise((resolve) => {
+  if (!WEB_APP_URL) { resolve(null); return; }
+
+  const callbackName = `donLuchitoMenu_${Date.now()}_${Math.random().toString(36).slice(2)}`;
+  const script = document.createElement('script');
+  const windowWithCallback = window as unknown as Record<string, (payload: MenuPayload) => void>;
+  const cleanup = () => {
+    window.clearTimeout(timeout);
+    script.remove();
+    delete windowWithCallback[callbackName];
+  };
+  const timeout = window.setTimeout(() => { cleanup(); resolve(null); }, 10_000);
+
+  windowWithCallback[callbackName] = (payload) => { cleanup(); resolve(payload); };
+  script.onerror = () => { cleanup(); resolve(null); };
+  script.src = `${WEB_APP_URL}${WEB_APP_URL.includes('?') ? '&' : '?'}resource=menu&callback=${callbackName}`;
+  document.head.appendChild(script);
+});
+
+export const fetchMenuData = async (): Promise<Category[] | null> => {
+  const secureMenu = await fetchMenuFromWebApp();
+  const [categories, dishes] = secureMenu
+    ? [secureMenu.categorias, secureMenu.platos]
+    : await Promise.all([
+      fetchSheetData<SheetCategory>('categorias'),
+      fetchSheetData<SheetDish>('platos'),
+    ]);
+
+  if (!categories.length || !dishes.length) return null;
+
+  const menu = sortByOrder(categories)
+    .filter((category) => category.id?.trim() && category.nombre?.trim())
+    .map((category) => {
+      const items: Dish[] = sortByOrder(dishes)
+        .filter((dish) => dish.categoria_id?.trim() === category.id.trim() && dish.nombre?.trim() && dish.precio?.trim())
+        .map((dish) => ({
+          nombre: dish.nombre.trim(),
+          descripcion: dish.descripcion?.trim() || undefined,
+          precio: `S/ ${Number(dish.precio).toFixed(2)}`,
+          imagen: dish.url_imagen?.trim() || undefined,
+        }));
+
+      return {
+        id: category.id.trim(),
+        nombre: category.nombre.trim(),
+        destacada: isFeatured(category.destacada),
+        horario: category.horario?.trim() || undefined,
+        items,
+      };
+    });
+
+  return menu.length ? menu : null;
+};
+
 // Configura aquí la URL de tu Google Apps Script Web App para poder enviar datos
 // Instrucciones: Crea un Apps Script, pega el código que te di, impleméntalo como Aplicación Web y pega la URL de ejecución aquí.
-export const WEB_APP_URL = '';
+export const WEB_APP_URL: string = '';
 
 export const submitSheetData = async (sheetName: string, data: any): Promise<boolean> => {
   if (!WEB_APP_URL) {
